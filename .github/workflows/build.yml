@@ -28,6 +28,15 @@ jobs:
         with:
           combine: true
           target: ${{ matrix.config.target }}
+      - name: Dump SDK headers (diagnostic)
+        if: always() && matrix.config.target == 'Android64'
+        run: |
+          for pat in 'Popup.hpp' 'web.hpp' 'TextInput.hpp' 'async.hpp' 'Task.hpp' 'ZipUtils.hpp' 'LocalLevelManager.hpp'; do
+            for f in $(find . -path '*include/Geode*' -name "$pat" -o -path '*bindings/Geode*' -name "$pat" | head -3); do
+              echo "=====HEADER $f"; cat "$f" | head -400
+            done
+          done
+          grep -rn "static.*compressString\|compressString" --include=*.hpp . | head -5
 
   package:
     name: Package builds
