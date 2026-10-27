@@ -3,7 +3,9 @@
 #include <Geode/binding/GJGameLevel.hpp>
 #include <Geode/binding/LocalLevelManager.hpp>
 #include <Geode/modify/LevelBrowserLayer.hpp>
+#include <Geode/ui/Popup.hpp>
 #include <Geode/ui/TextInput.hpp>
+#include <Geode/utils/async.hpp>
 #include <Geode/utils/web.hpp>
 
 #include <chrono>
@@ -13,16 +15,16 @@
 
 using namespace geode::prelude;
 
-class SilicatePopup : public Popup<> {
+class SilicatePopup : public geode::Popup {
 protected:
     TextInput* m_prompt = nullptr;
     TextInput* m_key = nullptr;
     CCLabelBMFont* m_status = nullptr;
     CCMenuItemSpriteExtra* m_goBtn = nullptr;
-    EventListener<web::WebTask> m_listener;
+    async::TaskHolder<web::WebResponse> m_task;
     bool m_busy = false;
 
-    bool setup() override {
+    bool setup() {
         setTitle("Silicate AI Level Generator");
         auto size = m_mainLayer->getContentSize();
 
@@ -76,26 +78,23 @@ protected:
 
         m_busy = true;
         setStatus("Asking " + model + " for a plan...");
-        m_listener.bind([this, diff](web::WebTask::Event* e) {
-            auto* res = e->getValue();
-            if (!res) return;
+        m_task.spawn(req.post(silicate::endpointFor(model)), [this, diff](web::WebResponse res) {
             m_busy = false;
-            if (!res->ok()) {
-                return setStatus(res->code() > 0
-                    ? silicate::describeError(res->code(), res->string().unwrapOr(""))
+            if (!res.ok()) {
+                return setStatus(res.code() > 0
+                    ? silicate::describeError(res.code(), res.string().unwrapOr(""))
                     : "Network error - check your connection.");
             }
             try {
                 uint64_t seed = (uint64_t)std::chrono::steady_clock::now().time_since_epoch().count();
                 silicate::Rng rng(seed);
-                auto plan = silicate::parseResponse(res->string().unwrapOr(""), rng);
+                auto plan = silicate::parseResponse(res.string().unwrapOr(""), rng);
                 plan.difficulty = diff;
                 finish(plan, seed);
             } catch (std::exception const& ex) {
                 setStatus(std::string("Failed: ") + ex.what());
             }
         });
-        m_listener.setFilter(req.post(silicate::endpointFor(model)));
     }
 
     void finish(silicate::Plan const& plan, uint64_t seed) {
@@ -124,11 +123,11 @@ protected:
 public:
     static SilicatePopup* create() {
         auto ret = new SilicatePopup();
-        if (ret->initAnchored(340.f, 190.f)) {
+        if (ret->Popup::init(340.f, 190.f) && ret->setup()) {
             ret->autorelease();
             return ret;
         }
-        CC_SAFE_DELETE(ret);
+        delete ret;
         return nullptr;
     }
 };
