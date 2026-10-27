@@ -1,0 +1,36 @@
+{
+	"geode": "4.0.0",
+	"gd": {
+		"win": "2.2074",
+		"android": "2.2074",
+		"mac": "2.2074",
+		"ios": "2.2074"
+	},
+	"version": "v0.2.0",
+	"id": "everagre3n.silicate",
+	"name": "Silicate",
+	"developer": "Everagre3n",
+	"description": "AI level generator: describe a level, Gemini plans it, and Silicate builds and decorates it.",
+	"tags": ["editor", "utility"],
+	"settings": {
+		"api-key": {
+			"type": "string",
+			"name": "Gemini API key",
+			"description": "Required. Free key from <cy>aistudio.google.com/apikey</c>. Stored only on this device.",
+			"default": ""
+		},
+		"model": {
+			"type": "string",
+			"name": "Model",
+			"description": "Gemini model id. The default is the free-tier Flash model.",
+			"default": "gemini-flash-latest"
+		},
+		"difficulty": {
+			"type": "string",
+			"name": "Difficulty",
+			"description": "Limits gaps, spike widths and spacing the generator may use.",
+			"default": "normal",
+			"one-of": ["easy", "normal", "hard", "insane"]
+		}
+	}
+}
