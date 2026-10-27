@@ -1,30 +1,30 @@
 # Silicate
 
-AI level generator for Geometry Dash. Python, standard library only, so it runs on a PC or in Termux on Android.
+An AI level generator for Geometry Dash, as a [Geode](https://geode-sdk.org) mod. Describe a level, Gemini plans it, and Silicate builds and decorates it.
 
-**How it works.** Gemini never writes raw object data. It writes a short *plan* (theme, bpm, sections, moods, gamemodes, structure styles). A deterministic compiler then builds the level:
+**How it works.** Gemini never writes raw object data. It writes a short *plan* (theme, bpm, sections, moods, gamemodes, structure styles). A deterministic compiler (`src/core`) then builds the level:
 
-- **Structures**: stairs, towers/platforms, spike runs, pits with spikes, pad and orb jumps, and ship / wave / ball / UFO corridors with pillars. All sizes are clamped to cube-jump physics for the chosen difficulty and speed (max gap, spike width, rise, spacing).
-- **Decoration**: two-tone checkered fills with accent columns, edge trim on every surface, hanging diamond chains and floating sparkles, mood-based colour triggers per section and bar-synced pulses. Solid decoration is placed only where the player can never reach (above the jump envelope, behind walls), because block hitboxes ignore z-layer. This is covered by a test.
+- **Structures**: stairs, towers/platforms, spike runs, pits with spikes, pad and orb jumps, and ship / wave / ball / UFO corridors with pillars. Sizes are clamped to cube-jump physics for the chosen difficulty and speed (max gap, spike width, rise, spacing).
+- **Decoration**: two-tone checkered fills with accent columns, edge trim, hanging diamond chains and floating sparkles, mood-based colour triggers per section and bar-synced pulses. Solid decoration is only placed where the player can never reach (above the jump envelope, behind walls), because block hitboxes ignore z-layer. A test covers this.
+
+## Install
+
+1. Open the repo's **Actions** tab, pick the latest green *Build Silicate* run, and download the **silicate-geode** artifact (a zip).
+2. Unzip it. Copy the `.geode` file for your platform (Android 32/64-bit, or Windows) into Geode's `mods` folder, or install it from the Geode launcher / in-game mod list.
+3. Mod settings: paste your **Gemini API key** (free at https://aistudio.google.com/apikey), optionally change the **model** (default `gemini-flash-latest`, the free-tier Flash model) and **difficulty**.
 
 ## Use
 
-```
-python -m silicate config --api-key YOUR_KEY       # or just run generate and you'll be asked
-python -m silicate generate "an icy hard level with a ship drop" --difficulty hard
-python -m silicate generate "chill forest cruise" --model gemini-2.5-flash-lite
-python -m silicate generate --offline --seed 7      # no AI, random planner
-python -m silicate inspect out/Some_Level.gmd
-```
+Open **My Levels**, tap the **AI** button, type a description (e.g. "icy hard level with a ship drop"), and press **Generate**. The new level is added to the top of My Levels and can be opened in the editor.
 
-- **API key is required.** Get a free one at https://aistudio.google.com/apikey. Lookup order: `--api-key`, `$GEMINI_API_KEY`, saved config, interactive prompt (which offers to save it, chmod 600).
-- **Default model** is `gemini-flash-latest` (free-tier Gemini Flash). Change it with `--model`, `$SILICATE_MODEL`, or `config --model`.
-- Output goes to `out/`: `.gmd` (import with GDShare/Geode-style tools), `.txt` (raw level string) and `.plan.json` (what the AI decided).
+## Status and caveats
 
-## Caveats
+- The mod compiles in CI for Android 32/64-bit and Windows against Geode 5.11.2 / GD 2.2081. It has **not been run in the game yet**, so the popup, the Gemini call and the look of generated levels are unverified.
+- Object IDs and property keys live in `src/core/objects.hpp` (z-layers, pulse and no-touch keys are best-effort). If something looks wrong in your game version, fix it there.
+- Robot and spider modes, slopes and music sync are not implemented.
 
-- Not verified in-game yet. Object IDs and property keys live in `silicate/objects.py` (z-layers, pulse and no-touch keys are best-effort). If something looks wrong in your build, fix it there.
-- Robot and spider modes, slopes and custom song sync are not implemented.
-- Importing on Android normally needs a mod loader or save-file editing; the game APK itself is never touched.
+## Development
 
-Tests: `python -m unittest discover -s tests`
+- `src/core/` is plain C++ with no Geode dependency. Test it anywhere: `./tests/run.sh`
+- `src/main.cpp` is the Geode UI layer (button, popup, Gemini request, saving the level).
+- `tools/` holds the original Python implementation (`python -m silicate generate --offline`) used as a reference.
