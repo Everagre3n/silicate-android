@@ -1,0 +1,22 @@
+name: Probe SDK combos
+on:
+  workflow_dispatch:
+  push:
+    branches: ["**"]
+jobs:
+  probe:
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk: [nightly, stable]
+        std: ["20", "23"]
+    name: sdk=${{ matrix.sdk }} std=${{ matrix.std }}
+    runs-on: ubuntu-latest
+    env:
+      SILICATE_STD: ${{ matrix.std }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: geode-sdk/build-geode-mod@main
+        with:
+          target: Android64
+          sdk: ${{ matrix.sdk }}
